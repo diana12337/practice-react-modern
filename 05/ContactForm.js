@@ -1,106 +1,61 @@
-import React, {useReducer}from 'react';
-import checkInput from "./validate"
-/* import account from './account'; */
+import React, { useReducer, useState } from "react";
 
+import { fields } from "./field";
 
-function removeErrorMessages(arr, container) {
-    Array.from(arr).forEach((el) => {
-        container.removeChild(el)
-
-    });
-}
-function validateInputs(state) {
-
-    const { fullName, email, tel, title, message } = state
-    const divElement = document.querySelector(".error")
-    // eslint-disable-next-line no-console
-    console.log(divElement)
-    const pElements = divElement.children
-    const namePattern = /^[a-zA-Z]{2}/;
-    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    removeErrorMessages(pElements, divElement)
-    // eslint-disable-next-line no-unused-vars
-    let inputName;
-    const isfullNameValid = checkInput(fullName, namePattern, inputName = "fullName")
-    const isEmailValid = checkInput(email, emailPattern, inputName = "email")
-
-    const isTelValid = checkInput(tel, namePattern, inputName = "tel")
-    // eslint-disable-next-line no-unused-vars
-    const isTitleValid = checkInput(title, namePattern, inputName = "title")
-    // eslint-disable-next-line no-unused-vars
-    const isMessageValid = checkInput(message, namePattern, inputName = "message")
-    const isFormValid = isfullNameValid && isEmailValid && isTelValid && isTitleValid && isMessageValid
-
-    return isFormValid
-
-}
-
-const sendData = (e, state) => {
-    e.preventDefault()
-    const isFormValid = validateInputs(state)
-    if (isFormValid){
-        // eslint-disable-next-line no-console
-        console.log("yes")
-    }
-    
-}
 function ContactForm() {
-
-    const init = { fullName:'', email:'', tel: '', title: '', message: '' };
-    const reducer = (state, {name, value}) => ({ ...state, [name]:value})
+    const init = { fullName: "", email: "", tel: "", title: "", message: "" };
+    const reducer = (state, { name, value }) => ({ ...state, [name]: value });
     const [state, dispatch] = useReducer(reducer, init);
-    const { fullName, email, tel, title, message } = state;
 
-    return <form className = "form"> 
-        <h1>Register</h1>
-        <div className = "error" />
-        <label htmlFor="fullName"> Full Name
-            <input 
-                name="fullName"
-                value={fullName}
-                placeholder= "imię i nazwisko" 
-                type ='text'
-                onChange={e=>dispatch(e.target)} />
-        </label>
-        <label htmlFor="email"> Email
-            <input 
-                name="email"
-                value={email}
-                placeholder= "email" 
-                type ='text' 
-                onChange={e=>dispatch(e.target)}
-                required/>
-        </label>
-        <label htmlFor="tel"> Telefon
-            <input 
-                name="tel"
-                value={tel}
-                placeholder= "telefon" 
-                type ="tel"
-                onChange={e=>dispatch(e.target)}/>
-        </label>
-        <label htmlFor="title"> Title
-            <input 
-                name="title"
-                value={title}
-                placeholder= "temat" 
-                type ='text'
-                onChange={e=>dispatch(e.target)} 
-                required/>
-        </label>
-        <label htmlFor="message"> Message
-            <input
-                name = "message"
-                value={message}
-                placeholder= "message" 
-                type ='text'
-                onChange={e=>dispatch(e.target)}
-                required />
-        </label>
+    const [allErrors, setErrors] = useState([]);
+
+    function validateInputs() {
+        const errors = [];
+
+        fields.forEach((field) => {
+            if (field.required) {
+                if (state[field.name].length === 0) {
+                    errors.push(`Pole  ${field.label} jest niepoprawne`);
+                }
+            } else if (field.pattern) {
+                const { pattern } = field;
+                if (!pattern.test(state[field.name])) {
+                    errors.push(`Pole  ${field.label} jest niepoprawne`);
+                }
+            }
+        });
+
+        return errors;
+    }
+    function renderErrors() {
+        return allErrors.map((err) => err.map((el) => <li>{el}</li>));
+    }
+    function handleSubmit(e) {
+        e.preventDefault();
+
+        const errors = validateInputs();
+        setErrors([errors]);
+    }
+    const allFields = fields.map((field) => (
         <input
-            type="submit"
-            onClick = { e =>  sendData(e, state) } />  
-    </form>;
+            name={field.name}
+            value={state[field.name]}
+            placeholder={field.placeholder}
+            type={field.type}
+            onChange={(e) => dispatch(e.target)}
+        />
+    ));
+    return (
+        <form className="form" onSubmit={(e) => handleSubmit(e)}>
+            <h1>Register</h1>
+            <ul>{renderErrors()}</ul>
+            <div className="error" />
+
+            {allFields}
+
+            <input type="submit" />
+        </form>
+    );
 }
 
 export default ContactForm;
